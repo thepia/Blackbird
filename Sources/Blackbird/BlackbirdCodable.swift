@@ -115,7 +115,25 @@ fileprivate struct BlackbirdSQLiteSingleValueDecodingContainer: SingleValueDecod
         let value = try value()
         if T.self == Data.self { return (value.dataValue ?? Data()) as! T }
         if T.self == URL.self, let urlStr = value.stringValue, let url = URL(string: urlStr) { return url as! T }
-        if T.self == Date.self { return Date(timeIntervalSince1970: value.doubleValue ?? 0) as! T }
+        
+        // Add support for both timestamp and timeInterval date formats
+        if T.self == Date.self {
+            if let timestampStr = value.stringValue {
+                // Try parsing ISO8601 timestamp
+                let formatter = ISO8601DateFormatter()
+                formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                if let date = formatter.date(from: timestampStr) {
+                    return date as! T
+                }
+                // Fallback to simpler timestamp format
+                formatter.formatOptions = [.withInternetDateTime]
+                if let date = formatter.date(from: timestampStr) {
+                    return date as! T
+                }
+            }
+            // Fallback to timeInterval
+            return Date(timeIntervalSince1970: value.doubleValue ?? 0) as! T
+        }
 
         if let eT = T.self as? any BlackbirdIntegerOptionalEnum.Type, value.int64Value == nil {
             return (try decodeNilRepresentable(eT) as? T)!
@@ -207,6 +225,20 @@ fileprivate class BlackbirdSQLiteKeyedDecodingContainer<K: CodingKey>: KeyedDeco
     func decode(_: Data.Type, forKey key: K) throws -> Data           { row[key.stringValue]?.dataValue ?? Data() }
 
     func decode(_: Date.Type, forKey key: K) throws -> Date {
+        if let timestampStr = row[key.stringValue]?.stringValue {
+            // Try parsing ISO8601 timestamp
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            if let date = formatter.date(from: timestampStr) {
+                return date
+            }
+            // Fallback to simpler timestamp format
+            formatter.formatOptions = [.withInternetDateTime]
+            if let date = formatter.date(from: timestampStr) {
+                return date
+            }
+        }
+        // Fallback to timeInterval
         let timeInterval = try decode(Double.self, forKey: key)
         return Date(timeIntervalSince1970: timeInterval)
     }

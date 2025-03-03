@@ -31,7 +31,7 @@
 //  SOFTWARE.
 //
 
-extension PartialKeyPath: @unchecked Sendable { }
+extension PartialKeyPath: @retroactive @unchecked Sendable { }
 
 public extension String.StringInterpolation {
     mutating func appendInterpolation<T: BlackbirdModel>(_ keyPath: T.BlackbirdColumnKeyPath) {

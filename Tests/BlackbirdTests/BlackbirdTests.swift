@@ -1295,6 +1295,83 @@ final class BlackbirdTestTests: XCTestCase, @unchecked Sendable {
         await backupDb.close()
     }
 
+    /*
+    func testDateConversions() async throws {
+        let db = try Blackbird.Database(path: sqliteFilename)
+        
+        // Test model with different date formats
+        struct DateTest: BlackbirdModel {
+            @BlackbirdColumn var id: Int
+            @BlackbirdColumn var timestamp_date: Date
+            @BlackbirdColumn var interval_date: Date
+            @BlackbirdColumn var nullable_date: Date?
+        }
+        
+        // Create test table with different date column types
+        try await db.execute("""
+            CREATE TABLE IF NOT EXISTS date_test (
+                id INTEGER PRIMARY KEY,
+                timestamp_date TEXT NOT NULL,
+                interval_date REAL NOT NULL,
+                nullable_date TEXT
+            )
+        """)
+        
+        let now = Date()
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let timestampStr = formatter.string(from: now)
+        
+        // Insert test data with different date formats
+        try await db.execute("""
+            INSERT INTO date_test (id, timestamp_date, interval_date, nullable_date)
+            VALUES (?, ?, ?, ?)
+        """, 1, timestampStr, now.timeIntervalSince1970, nil)
+        
+        // Test reading
+        let result = try await DateTest.read(from: db, id: 1)
+        XCTAssertNotNil(result)
+        
+        // Compare dates (allowing small difference due to timestamp precision)
+        let tolerance = TimeInterval(0.001) // 1 millisecond tolerance
+        XCTAssertEqual(result?.timestamp_date.timeIntervalSince1970, 
+                       now.timeIntervalSince1970, 
+                       accuracy: tolerance,
+                       "Timestamp date should match")
+        
+        XCTAssertEqual(result?.interval_date.timeIntervalSince1970, 
+                       now.timeIntervalSince1970, 
+                       accuracy: tolerance,
+                       "Interval date should match")
+        
+        XCTAssertNil(result?.nullable_date, "Nullable date should be nil")
+        
+        // Test different timestamp formats
+        try await db.execute("""
+            INSERT INTO date_test (id, timestamp_date, interval_date, nullable_date)
+            VALUES 
+            (2, '2024-03-14T15:30:00Z', ?, '2024-03-14T15:30:00.123Z'),
+            (3, '2024-03-14T15:30:00.000Z', ?, NULL)
+        """, now.timeIntervalSince1970, now.timeIntervalSince1970)
+        
+        let results = try await DateTest.read(from: db, orderBy: .ascending(\.$id))
+        XCTAssertEqual(results.count, 3)
+        
+        // Verify second record's dates
+        let expectedDate = formatter.date(from: "2024-03-14T15:30:00.000Z")!
+        XCTAssertEqual(results[1].timestamp_date.timeIntervalSince1970,
+                       expectedDate.timeIntervalSince1970,
+                       accuracy: tolerance,
+                       "Simple timestamp format should parse correctly")
+        
+        // Verify third record's dates
+        XCTAssertEqual(results[2].timestamp_date.timeIntervalSince1970,
+                       expectedDate.timeIntervalSince1970,
+                       accuracy: tolerance,
+                       "Precise timestamp format should parse correctly")
+        XCTAssertNil(results[2].nullable_date, "NULL should parse as nil")
+    }
+     */
 
 /* Tests duplicate-index detection. Throws fatal error on success.
     func testDuplicateIndex() async throws {
